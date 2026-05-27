@@ -1,15 +1,10 @@
 import express from 'express';
 import upload from '../../middleware/uploadMiddleware.js';
-import {
-    createArticle,
-    getArticles,
-    getArticle,
-    updateArticle,
-    deleteArticle,
-} from './article.controller.js';
+import { createArticle, getArticles, getArticle, updateArticle, deleteArticle } from './article.controller.js';
 
 const article = express.Router();
 
+// CREATE INSTANCE OF UPLOADS
 const articleUploads = upload.fields([
     { name: 'images', maxCount: 10 },
     { name: 'videos', maxCount: 10 },

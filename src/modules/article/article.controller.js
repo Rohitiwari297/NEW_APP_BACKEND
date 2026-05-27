@@ -3,16 +3,7 @@ import ApiError from "../../utils/ApiErrorHandler.js";
 import ApiResponse from "../../utils/ApiRespinseHandler.js";
 import Article from "../../models/article.module.js";
 import mongoose from "mongoose";
-
-const normalizeSlug = (value) => {
-    if (!value) return "";
-    return value
-        .toString()
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, "");
-};
+import { fileDelete } from "../../utils/FileDelete.js";
 
 const parseUploadArray = (files, fieldName) => {
     if (!files?.[fieldName]) return undefined;
@@ -24,41 +15,54 @@ const parseUploadArray = (files, fieldName) => {
 
 // Create a new article
 export const createArticle = AsyncHandler(async (req, res) => {
-    const { catId, newsName, content, images, videos, slug } = req.body;
+    const { catId, newsName, content, images, videos } = req.body;
 
     const imageUploadData = parseUploadArray(req.files, "images");
     const videoUploadData = parseUploadArray(req.files, "videos");
 
-    if (!content) {
-        throw new ApiError(400, "News content is required");
+    try {
+        if (!content) {
+            throw new ApiError(400, "News content is required");
+        }
+
+        if (catId && !mongoose.Types.ObjectId.isValid(catId)) {
+            throw new ApiError(400, "Invalid category ID format");
+        }
+
+        const newArticle = await Article.create({
+            catId,
+            newsName,
+            content,
+            images: imageUploadData ?? images,
+            videos: videoUploadData ?? videos,
+        });
+
+        res.status(201).json(new ApiResponse(201, "Article created successfully", newArticle));
+    } catch (error) {
+
+        if (imageUploadData?.length) {
+            await Promise.all(
+                imageUploadData.map((file) => {
+                    fileDelete(file.path)
+                })
+            )
+        }
+
+        if (videoUploadData?.length) {
+            await Promise.all(
+                videoUploadData.map((file) => {
+                    fileDelete(file.path)
+                })
+            )
+
+        }
+
+        console.log(`Server error while creating the Article, Error:${error}`)
+
     }
-
-    if (catId && !mongoose.Types.ObjectId.isValid(catId)) {
-        throw new ApiError(400, "Invalid category ID format");
-    }
-
-    const finalSlug = slug
-        ? normalizeSlug(slug)
-        : normalizeSlug(newsName) || `article-${Date.now()}`;
-
-    const existingArticle = await Article.findOne({ slug: finalSlug });
-    if (existingArticle) {
-        throw new ApiError(409, "Article with this slug already exists");
-    }
-
-    const newArticle = await Article.create({
-        catId,
-        newsName,
-        content,
-        images: imageUploadData ?? images,
-        videos: videoUploadData ?? videos,
-        slug: finalSlug,
-    });
-
-    res.status(201).json(new ApiResponse(201, "Article created successfully", newArticle));
 });
 
-// Get all articles or filter by category / slug
+// Get all articles or filter by category
 export const getArticles = AsyncHandler(async (req, res) => {
     const query = {};
 
@@ -67,10 +71,6 @@ export const getArticles = AsyncHandler(async (req, res) => {
             throw new ApiError(400, "Invalid category ID format");
         }
         query.catId = req.query.catId;
-    }
-
-    if (req.query.slug) {
-        query.slug = req.query.slug.toLowerCase().trim();
     }
 
     const articles = await Article.find(query).populate("catId", "catName");
@@ -95,7 +95,7 @@ export const getArticle = AsyncHandler(async (req, res) => {
 // Update an article by ID
 export const updateArticle = AsyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { catId, newsName, content, images, videos, slug } = req.body;
+    const { catId, newsName, content, images, videos } = req.body;
 
     const imageUploadData = parseUploadArray(req.files, "images");
     const videoUploadData = parseUploadArray(req.files, "videos");
@@ -113,20 +113,11 @@ export const updateArticle = AsyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid category ID format");
     }
 
-    const finalSlug = slug ? normalizeSlug(slug) : article.slug;
-    if (slug && finalSlug !== article.slug) {
-        const existingArticle = await Article.findOne({ slug: finalSlug });
-        if (existingArticle && existingArticle._id.toString() !== id) {
-            throw new ApiError(409, "Article with this slug already exists");
-        }
-    }
-
     article.catId = catId ?? article.catId;
     article.newsName = newsName ?? article.newsName;
     article.content = content ?? article.content;
     article.images = imageUploadData ?? images ?? article.images;
     article.videos = videoUploadData ?? videos ?? article.videos;
-    article.slug = finalSlug;
 
     await article.save();
     res.status(200).json(new ApiResponse(200, "Article updated successfully", article));

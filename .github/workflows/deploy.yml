@@ -31,7 +31,7 @@ jobs:
 
             # create .env safely (NO EOF BLOCK)
             echo "NODE_ENV=production" > .env
-            echo "PORT=3000" >> .env
+            echo "PORT=7878" >> .env
 
             docker compose down || true
             docker compose up -d --build

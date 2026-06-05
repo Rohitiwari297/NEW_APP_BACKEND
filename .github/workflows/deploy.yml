@@ -6,10 +6,11 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Deploy to Hostinger via SSH
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOSTINGER_IP }}
@@ -17,17 +18,20 @@ jobs:
           password: ${{ secrets.HOSTINGER_PASSWORD }}
           timeout: 60s
           script: |
-            # Navigate to project directory (make sure this path is correct on your server)
+            set -e
+
             mkdir -p ~/news-app
             cd ~/news-app
-            
-            # If the repo isn't cloned yet, clone it. Otherwise, pull latest.
+
             if [ ! -d ".git" ]; then
               git clone https://github.com/Rohitiwari297/NEW_APP_BACKEND.git .
             else
-              git fetch origin main
-              git reset --hard origin/main
+              git pull origin main
             fi
-            
-            # Start the application
-            docker-compose up -d --build
+
+            # create .env safely (NO EOF BLOCK)
+            echo "NODE_ENV=production" > .env
+            echo "PORT=3000" >> .env
+
+            docker compose down || true
+            docker compose up -d --build

@@ -15,6 +15,6 @@ WORKDIR /app
 
 COPY --from=build /app /app
 
-EXPOSE 7778
+EXPOSE 7878
 
 CMD ["node", "server.js"]

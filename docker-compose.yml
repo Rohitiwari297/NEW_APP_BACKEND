@@ -13,7 +13,7 @@ services:
     build: .
     container_name: news-app-backend
     ports:
-      - "7778:7778"
+      - "7878:7878"
     env_file:
       - .env
     depends_on:

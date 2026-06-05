@@ -12,7 +12,7 @@ const connectDB = () => {
         .catch((err) => {
             console.error(
                 "MongoDB connection error:",
-                error
+                err
             );
 
             process.exit(1);

@@ -1,6 +1,14 @@
 version: '3.8'
 
 services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
   news-app:
     build: .
     container_name: news-app-backend
@@ -8,4 +16,9 @@ services:
       - "7778:7778"
     env_file:
       - .env
+    depends_on:
+      - mongodb
     restart: always
+
+volumes:
+  mongo-data:

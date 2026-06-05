@@ -5,8 +5,11 @@ import { fileDelete } from '../../utils/FileDelete.js'
 import Auth from '../../models/auth.model.js'
 import User from '../../models/user.model.js'
 import bcrypt from 'bcrypt'
+import crypto from 'crypto'
 import config from '../../config/config.js'
 import { setAuthCookies } from '../../utils/cookie.Handler.js'
+import sessionModel from '../../../../../MyFolders/New Project/Authentication/src/models/session.model.js'
+import jwt from 'jsonwebtoken'
 
 export const signup = AsyncHandler(async (req, res) => {
     const { fullName, email, password } = req.body;
@@ -76,9 +79,21 @@ export const login = AsyncHandler(async (req, res) => {
     const isPasswordCorrect = await bcrypt.compare(password, auth.password)
     if (!isPasswordCorrect) throw new ApiError(401, `Invalid credentials`);
 
-    const token = auth.generateAccessToken(user)
+    const refreshToken = auth.generateRefreshToken(user)
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
 
-    setAuthCookies(res, token)
+    //create session
+    const session = await sessionModel.create({
+        user: user._id,
+        refreshTokenHash,
+        ip: req.ip,
+        userAgent: req.headers["user-agent"]
+    })
+
+    const accessToken = auth.generateAccessToken(user)
+
+    setAuthCookies(res, refreshToken)
+
     return res.status(200).json(
         new ApiResponse(
             200,
@@ -90,8 +105,54 @@ export const login = AsyncHandler(async (req, res) => {
                     avatar: user.avatar,
                     role: user.role,
                 },
+                accessToken: accessToken
             }
         )
     )
 
 });
+
+export const refreshAccessToken = AsyncHandler(async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+        throw new ApiError(401, 'Refresh token not found')
+    }
+
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const session = await sessionModel.findOne({
+        refreshTokenHash,
+        revoked: false
+    })
+
+    if (!session) {
+        return res.status(401).json(
+            new ApiResponse(401, 'Invalid refresh token', [])
+        )
+    }
+
+    const decoded = jwt.verify(refreshToken, config.ACCESS_TOKEN_SECRET);
+    const user = await User.findOne({
+        authId: decoded._id
+    })
+
+    if (!user) {
+        throw new ApiError(401, "User not found");
+    }
+
+    const accessToken = auth.generateAccessToken(user)
+
+    const newRefreshToken = auth.generateRefreshToken(user)
+    setAuthCookies(res, newRefreshToken)
+
+    const newRefreshTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex')
+
+    session.refreshTokenHash = newRefreshTokenHash;
+    await session.save()
+
+    res.status(200).json(
+        new ApiResponse(200, 'Access token generate sucessfully', {accessToken})
+    )
+
+
+})

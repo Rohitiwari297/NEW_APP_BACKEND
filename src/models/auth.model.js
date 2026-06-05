@@ -36,5 +36,14 @@ AuthSchema.methods.generateAccessToken = function (user) {
     )
 }
 
+AuthSchema.methods.generateRefreshToken = function (user) {
+    return jwt.sign({
+        id: this._id,
+        email: this.email,
+    }, config.ACCESS_TOKEN_EXPIRY, {
+        expiresIn: config.REFRESH_TOKEN_EXPIRY
+    })
+}
+
 const Auth = mongoose.model("Auth", AuthSchema);
 export default Auth;

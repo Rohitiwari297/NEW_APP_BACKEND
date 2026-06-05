@@ -1,11 +1,11 @@
-export const setAuthCookies = (res, accessToken) => {
+export const setAuthCookies = (res, refreshToken) => {
     option = {
         httpOnly: true,
         secure: false,
         sameSite: "lax"
     }
 
-    res.cookie("accessToken", accessToken, {
+    res.cookie("accessToken", refreshToken, {
         ...option,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     })
@@ -23,6 +23,6 @@ export const clearAuthCookies = (res) => {
         sameSite: "strict",
     };
 
-    res.clearCookie("accessToken", options);
+    res.clearCookie("refreshToken", options);
     // res.clearCookie("refreshToken", options);
 };

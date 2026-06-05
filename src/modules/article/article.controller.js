@@ -37,7 +37,9 @@ export const createArticle = AsyncHandler(async (req, res) => {
             videos: videoUploadData ?? videos,
         });
 
-        res.status(201).json(new ApiResponse(201, "Article created successfully", newArticle));
+        return res.status(201).json(
+            new ApiResponse(201, "Article created successfully", newArticle)
+        );
     } catch (error) {
 
         if (imageUploadData?.length) {
@@ -73,8 +75,12 @@ export const getArticles = AsyncHandler(async (req, res) => {
         query.catId = req.query.catId;
     }
 
-    const articles = await Article.find(query).populate("catId", "catName");
-    res.status(200).json(new ApiResponse(200, "Articles fetched successfully", articles));
+    const articles = await Article.find(query)
+        .populate("catId", "catName");
+
+    return res.status(200).json(
+        new ApiResponse(200, "Articles fetched successfully", articles)
+    );
 });
 
 // Get a single article by ID
@@ -89,7 +95,9 @@ export const getArticle = AsyncHandler(async (req, res) => {
         throw new ApiError(404, "Article not found");
     }
 
-    res.status(200).json(new ApiResponse(200, "Article fetched successfully", article));
+    return res.status(200).json(
+        new ApiResponse(200, "Article fetched successfully", article)
+    );
 });
 
 // Update an article by ID
@@ -100,27 +108,49 @@ export const updateArticle = AsyncHandler(async (req, res) => {
     const imageUploadData = parseUploadArray(req.files, "images");
     const videoUploadData = parseUploadArray(req.files, "videos");
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        throw new ApiError(400, "Invalid article ID format");
+    try {
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            throw new ApiError(400, "Invalid article ID format");
+        }
+
+        const article = await Article.findById(id);
+        if (!article) {
+            throw new ApiError(404, "Article not found");
+        }
+
+        if (catId && !mongoose.Types.ObjectId.isValid(catId)) {
+            throw new ApiError(400, "Invalid category ID format");
+        }
+
+        article.catId = catId ?? article.catId;
+        article.newsName = newsName ?? article.newsName;
+        article.content = content ?? article.content;
+        article.images = imageUploadData ?? images ?? article.images;
+        article.videos = videoUploadData ?? videos ?? article.videos;
+
+        await article.save();
+        return res.status(200).json(
+            new ApiResponse(200, "Article updated successfully", article)
+        );
+    } catch (error) {
+        if (imageUploadData.length) {
+            await Promise.all(
+                imageUploadData.map((file) => {
+                    fileDelete(file.path)
+                })
+            )
+        }
+
+        if (videoUploadData.length) {
+            await Promise.all(
+                videoUploadData.map((file) => {
+                    fileDelete(file.path)
+                })
+            )
+        }
+
+        return console.error(`Server error while update the Article, Error:${error}`)
     }
-
-    const article = await Article.findById(id);
-    if (!article) {
-        throw new ApiError(404, "Article not found");
-    }
-
-    if (catId && !mongoose.Types.ObjectId.isValid(catId)) {
-        throw new ApiError(400, "Invalid category ID format");
-    }
-
-    article.catId = catId ?? article.catId;
-    article.newsName = newsName ?? article.newsName;
-    article.content = content ?? article.content;
-    article.images = imageUploadData ?? images ?? article.images;
-    article.videos = videoUploadData ?? videos ?? article.videos;
-
-    await article.save();
-    res.status(200).json(new ApiResponse(200, "Article updated successfully", article));
 });
 
 // Delete an article by ID

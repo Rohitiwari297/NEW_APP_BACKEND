@@ -1,7 +1,7 @@
 import AsyncHandler from "../../utils/AsyncHandler.js";
 import ApiError from "../../utils/ApiErrorHandler.js";
 import ApiResponse from "../../utils/ApiRespinseHandler.js";
-import Article from "../../models/article.module.js";
+import Article from "../../models/article.model.js";
 import mongoose from "mongoose";
 import { fileDelete } from "../../utils/FileDelete.js";
 

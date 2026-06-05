@@ -8,7 +8,7 @@ import bcrypt from 'bcrypt'
 import crypto from 'crypto'
 import config from '../../config/config.js'
 import { setAuthCookies } from '../../utils/cookie.Handler.js'
-import sessionModel from '../../../../../MyFolders/New Project/Authentication/src/models/session.model.js'
+import sessionModel from '../../models/session.model.js'
 import jwt from 'jsonwebtoken'
 
 export const signup = AsyncHandler(async (req, res) => {
@@ -151,7 +151,7 @@ export const refreshAccessToken = AsyncHandler(async (req, res) => {
     await session.save()
 
     res.status(200).json(
-        new ApiResponse(200, 'Access token generate sucessfully', {accessToken})
+        new ApiResponse(200, 'Access token generate sucessfully', { accessToken })
     )
 
 

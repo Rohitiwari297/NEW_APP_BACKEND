@@ -8,3 +8,5 @@ category.route('/')
     .patch(updateCategory)
     .get(getCategory);
 
+export default category;
+

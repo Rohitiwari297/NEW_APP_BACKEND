@@ -69,7 +69,7 @@ export const getCategory = AsyncHandler(async (req, res) => {
         // Validation: Check karein ki ID valid MongoDB ID hai ya nahi
         if (!mongoose.Types.ObjectId.isValid(req.query.catId)) {
             return res.status(400).json(
-                ApiResponse(400, 'Invalid Category ID format', null)
+                new ApiResponse(400, 'Invalid Category ID format', null)
             );
         }
         queryObj._id = req.query.catId;
@@ -79,11 +79,11 @@ export const getCategory = AsyncHandler(async (req, res) => {
 
     if (category.length > 0) {
         return res.status(200).json(
-            ApiResponse(200, 'Category feched successfully', category)
+            new ApiResponse(200, 'Category feched successfully', category)
         )
     } else {
         return res.status(200).json(
-            ApiResponse(200, 'Empty Category table', [])
+            new ApiResponse(200, 'Empty Category table', [])
         )
     }
 })

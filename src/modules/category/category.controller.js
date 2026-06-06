@@ -57,7 +57,7 @@ export const updateCategory = AsyncHandler(async (req, res) => {
     await isCatIdVaid.save();
 
     res.status(200).json(
-        ApiResponse(200, 'Category updated successfully')
+        new ApiResponse(200, 'Category updated successfully')
     )
 });
 

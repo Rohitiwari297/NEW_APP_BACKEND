@@ -4,9 +4,9 @@ import { createCategory, getCategory, updateCategory } from './category.controll
 const category = express.Router();
 
 category.route('/')
+    .get(getCategory)
     .post(createCategory)
     .patch(updateCategory)
-    .get(getCategory);
 
 export default category;
 

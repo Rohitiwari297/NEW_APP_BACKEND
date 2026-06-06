@@ -30,7 +30,7 @@ export const createCategory = AsyncHandler(async (req, res) => {
     })
 
     res.status(201).json(
-        ApiResponse(201, 'Category created successfully!', newCate)
+        new ApiResponse(201, 'Category created successfully!', newCate)
     )
 });
 

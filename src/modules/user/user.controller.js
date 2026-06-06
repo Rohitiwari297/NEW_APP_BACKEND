@@ -18,6 +18,8 @@ export const getProfile = AsyncHandler(async (req, res) => {
             select: 'email'
         })
 
+    console.log("user", user)
+
     if (!user) {
         throw new ApiError(400, 'Invalid user Id!')
     };
@@ -25,11 +27,12 @@ export const getProfile = AsyncHandler(async (req, res) => {
     res.status(200).json(
         new ApiResponse(200, 'Data feched successfully', user)
     )
+
 });
 
 export const updateProfile = AsyncHandler(async (req, res) => {
     const { name } = req.body;
-    
+
 });
 
 export const updateAvatar = AsyncHandler(async (req, res) => {

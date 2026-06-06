@@ -1,7 +1,7 @@
 import AsyncHandler from '../../utils/AsyncHandler.js'
 import ApiError from '../../utils/ApiErrorHandler.js'
 import Category from '../../models/category.model.js'
-import FileDelete from '../../utils/FileDelete.js'
+import { fileDelete } from '../../utils/FileDelete.js'
 import ApiResponse from '../../utils/ApiRespinseHandler.js'
 import mongoose from 'mongoose'
 
@@ -9,7 +9,7 @@ import mongoose from 'mongoose'
 export const createCategory = AsyncHandler(async (req, res) => {
     const { catName, discription } = req.body;
     if (!catName) {
-        FileDelete(req.file?.path)
+        fileDelete(req.file?.path)
         throw new ApiError(400, 'Category Name is required')
     };
 
@@ -17,7 +17,7 @@ export const createCategory = AsyncHandler(async (req, res) => {
         catName
     })
     if (isDuplicateCategory) {
-        FileDelete(req.file?.path)
+        fileDelete(req.file?.path)
         throw new ApiError(409, "Category already exists");
     }
 
@@ -39,7 +39,7 @@ export const updateCategory = AsyncHandler(async (req, res) => {
     const { catId } = req.params;
 
     if (!catId) {
-        FileDelete(req.file?.path)
+        fileDelete(req.file?.path)
         throw new ApiError(400, 'Category id missing in params')
     }
 
@@ -65,7 +65,7 @@ export const getCategory = AsyncHandler(async (req, res) => {
     const queryObj = {}
     if (req.query.catId) {
         console.log('CatIdStatus:', mongoose.Types.ObjectId.isValid(req.query.catId))
-        
+
         // Validation: Check karein ki ID valid MongoDB ID hai ya nahi
         if (!mongoose.Types.ObjectId.isValid(req.query.catId)) {
             return res.status(400).json(

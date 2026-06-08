@@ -7,6 +7,7 @@ import articleRoute from './modules/article/article.router.js'
 import cookieParser from 'cookie-parser';
 import cors from 'cors'
 import categoryRoute from './modules/category/category.router.js';
+import socialRouter from './modules/socialMedia/socialMedia.router.js';
 
 
 const app = express();
@@ -39,6 +40,7 @@ app.use('/api/v1/auth', authRoute)
 app.use('/api/v1/users', userRoute);
 app.use('/api/v1/category', categoryRoute);
 app.use('/api/v1/articles', articleRoute);
+app.use('/api/v1/social-details', socialRouter);
 
 
 

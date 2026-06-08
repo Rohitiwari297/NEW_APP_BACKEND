@@ -68,9 +68,7 @@ export const getCategory = AsyncHandler(async (req, res) => {
 
         // Validation: Check karein ki ID valid MongoDB ID hai ya nahi
         if (!mongoose.Types.ObjectId.isValid(req.query.catId)) {
-            return res.status(400).json(
-                new ApiResponse(400, 'Invalid Category ID format', null)
-            );
+            throw new ApiError(400, 'Invalid Category ID format')
         }
         queryObj._id = req.query.catId;
     }

@@ -4,9 +4,11 @@ import Category from '../../models/category.model.js'
 import { fileDelete } from '../../utils/FileDelete.js'
 import ApiResponse from '../../utils/ApiRespinseHandler.js'
 import mongoose from 'mongoose'
+import path from 'path'
 
 
 export const createCategory = AsyncHandler(async (req, res) => {
+    console.log('req.body', req.body)
     const { catName, discription } = req.body;
     if (!catName) {
         fileDelete(req.file?.path)
@@ -22,11 +24,12 @@ export const createCategory = AsyncHandler(async (req, res) => {
     }
 
     const image = req.file?.path || '';
+    const result = `uploads\\${path.basename(image)}`;
 
     const newCate = await Category.create({
         catName,
         discription,
-        image
+        image: result
     })
 
     res.status(201).json(

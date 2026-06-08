@@ -7,7 +7,9 @@ const category = express.Router();
 category.route('/')
     .get(getCategory)
     .post(upload.single('avitar'), createCategory)
-    .patch(updateCategory)
+
+category.route('/:catId')
+    .patch(upload.single('avitar'), updateCategory);
 
 export default category;
 

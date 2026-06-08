@@ -51,13 +51,13 @@ const articleSchema = new mongoose.Schema({
         }
     ],
 
-    slug: {
-        type: String,
-        required: true,
-        unique: true,
-        lowercase: true,
-        trim: true
-    },
+    // slug: {
+    //     type: String,
+    //     // required: true,
+    //     // unique: true,
+    //     lowercase: true,
+    //     trim: true
+    // },
 
 }, { timestamps: true });
 

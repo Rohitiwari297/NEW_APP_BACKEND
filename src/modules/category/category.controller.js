@@ -52,10 +52,11 @@ export const updateCategory = AsyncHandler(async (req, res) => {
     }
 
     const image = req.file?.path
+    const result = `uploads\\${path.basename(image)}`;
 
     isCatIdVaid.catName = catName ?? isCatIdVaid.catName;
     isCatIdVaid.discription = discription ?? isCatIdVaid.discription;
-    isCatIdVaid.image = image ?? isCatIdVaid.image
+    isCatIdVaid.image = result ?? isCatIdVaid.image
 
     await isCatIdVaid.save();
 

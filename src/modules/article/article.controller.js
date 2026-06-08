@@ -4,17 +4,19 @@ import ApiResponse from "../../utils/ApiRespinseHandler.js";
 import Article from "../../models/article.model.js";
 import mongoose from "mongoose";
 import { fileDelete } from "../../utils/FileDelete.js";
+import path from 'path'
 
 const parseUploadArray = (files, fieldName) => {
     if (!files?.[fieldName]) return undefined;
     return files[fieldName].map((file) => ({
         public_id: file.filename,
-        url: file.path,
+        url: `uploads\\${path.basename(file.path)}`,
     }));
 };
 
 // Create a new article
 export const createArticle = AsyncHandler(async (req, res) => {
+    console.log('req.body', req.body)
     const { catId, newsName, content, images, videos } = req.body;
 
     const imageUploadData = parseUploadArray(req.files, "images");
@@ -25,7 +27,7 @@ export const createArticle = AsyncHandler(async (req, res) => {
             throw new ApiError(400, "News content is required");
         }
 
-        if (catId && !mongoose.Types.ObjectId.isValid(catId)) {
+        if (!catId && !mongoose.Types.ObjectId.isValid(catId)) {
             throw new ApiError(400, "Invalid category ID format");
         }
 

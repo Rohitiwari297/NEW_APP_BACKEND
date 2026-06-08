@@ -5,6 +5,8 @@ import ApiResponse from "../../utils/ApiRespinseHandler.js";
 import AsyncHandler from "../../utils/AsyncHandler.js";
 
 export const getProfile = AsyncHandler(async (req, res) => {
+    console.log("req.query =>", req.query);
+    console.log("authId =>", req.query.authId);
     const queryObj = {}
 
     if (req.query) {

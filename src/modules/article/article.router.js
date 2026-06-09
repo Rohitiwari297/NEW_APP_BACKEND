@@ -1,6 +1,7 @@
 import express from 'express';
 import upload from '../../middleware/uploadMiddleware.js';
 import { createArticle, getArticles, getArticle, updateArticle, deleteArticle } from './article.controller.js';
+import { isLoggedIn } from '../../middleware/authMiddleware.js';
 
 const article = express.Router();
 
@@ -12,7 +13,7 @@ const articleUploads = upload.fields([
 
 article.route('/')
     .post(articleUploads, createArticle)
-    .get(getArticles);
+    .get(isLoggedIn, getArticles);
 
 article.route('/:id')
     .get(getArticle)

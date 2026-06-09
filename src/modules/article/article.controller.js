@@ -70,10 +70,8 @@ export const createArticle = AsyncHandler(async (req, res) => {
 
 // Get all articles or filter by category
 export const getArticles = AsyncHandler(async (req, res) => {
+    const userId = req.userId;
     const query = {};
-    const authId = req.userId
-
-    console.log('authId', authId)
 
     if (req.query.catId) {
         if (!mongoose.Types.ObjectId.isValid(req.query.catId)) {
@@ -130,7 +128,7 @@ export const getArticles = AsyncHandler(async (req, res) => {
 
                 isLiked: {
                     $in: [
-                        new mongoose.Types.ObjectId(authId),
+                        new mongoose.Types.ObjectId(userId),
                         { $ifNull: ["$social.likes", []] }
                     ]
                 },
@@ -149,7 +147,7 @@ export const getArticles = AsyncHandler(async (req, res) => {
 
                 isDisliked: {
                     $in: [
-                        new mongoose.Types.ObjectId(authId),
+                        new mongoose.Types.ObjectId(userId),
                         { $ifNull: ["$social.dislikes", []] }
                     ]
                 },
@@ -162,7 +160,7 @@ export const getArticles = AsyncHandler(async (req, res) => {
 
                 isSaved: {
                     $in: [
-                        new mongoose.Types.ObjectId(authId),
+                        new mongoose.Types.ObjectId(userId),
                         { $ifNull: ["$social.saves", []] }
                     ]
                 },

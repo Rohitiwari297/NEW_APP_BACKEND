@@ -8,7 +8,12 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors'
 import categoryRoute from './modules/category/category.router.js';
 import socialRouter from './modules/socialMedia/socialMedia.router.js';
+import path from 'path'
+import { fileURLToPath } from "url";
 
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 connectDB()
@@ -22,6 +27,8 @@ app.use(cors({
     origin: ["http://localhost:5173", "http://localhost:5174"],
     credentials: true
 }))
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // routes (example)
 app.get('/', (req, res) => {

@@ -5,12 +5,13 @@ import Article from "../../models/article.model.js";
 import mongoose from "mongoose";
 import { fileDelete } from "../../utils/FileDelete.js";
 import path from 'path'
+import User from "../../models/user.model.js";
 
 const parseUploadArray = (files, fieldName) => {
     if (!files?.[fieldName]) return undefined;
     return files[fieldName].map((file) => ({
         public_id: file.filename,
-        url: `uploads\\${path.basename(file.path)}`,
+        url: `uploads\${path.basename(file.path)}`,
     }));
 };
 
@@ -87,12 +88,163 @@ export const getArticles = AsyncHandler(async (req, res) => {
 
 // Get a single article by ID
 export const getArticle = AsyncHandler(async (req, res) => {
+
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new ApiError(400, "Invalid article ID format");
     }
 
-    const article = await Article.findById(id).populate("catId", "catName");
+    const article = await Article.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(id)
+            }
+        },
+
+        // Category
+        {
+            $lookup: {
+                from: "categories",
+                localField: "catId",
+                foreignField: "_id",
+                as: "category"
+            }
+        },
+        {
+            $unwind: {
+                path: "$category",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        // Social Data
+        {
+            $lookup: {
+                from: "socials",
+                localField: "_id",
+                foreignField: "articleId",
+                as: "social"
+            }
+        },
+        {
+            $unwind: {
+                path: "$social",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        // Users by authId
+        {
+            $lookup: {
+                from: "users",
+                localField: "social.comments.userId",
+                foreignField: "authId",
+                as: "commentUsers"
+            }
+        },
+
+        {
+            $project: {
+                title: 1,
+                description: 1,
+
+                category: {
+                    _id: "$category._id",
+                    catName: "$category.catName"
+                },
+
+                likesCount: {
+                    $size: {
+                        $ifNull: ["$social.likes", []]
+                    }
+                },
+
+                dislikesCount: {
+                    $size: {
+                        $ifNull: ["$social.dislikes", []]
+                    }
+                },
+
+                savesCount: {
+                    $size: {
+                        $ifNull: ["$social.saves", []]
+                    }
+                },
+
+                commentsCount: {
+                    $size: {
+                        $ifNull: ["$social.comments", []]
+                    }
+                },
+
+                comments: {
+                    $map: {
+                        input: {
+                            $ifNull: ["$social.comments", []]
+                        },
+                        as: "comment",
+                        in: {
+                            _id: "$$comment._id",
+                            userId: "$$comment.userId",
+                            comment: "$$comment.comment",
+                            createdAt: "$$comment.createdAt",
+
+                            fullName: {
+                                $let: {
+                                    vars: {
+                                        matchedUser: {
+                                            $arrayElemAt: [
+                                                {
+                                                    $filter: {
+                                                        input: "$commentUsers",
+                                                        as: "user",
+                                                        cond: {
+                                                            $eq: [
+                                                                "$$user.authId",
+                                                                "$$comment.userId"
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                0
+                                            ]
+                                        }
+                                    },
+                                    in: "$$matchedUser.fullName"
+                                }
+                            },
+
+                            avatar: {
+                                $let: {
+                                    vars: {
+                                        matchedUser: {
+                                            $arrayElemAt: [
+                                                {
+                                                    $filter: {
+                                                        input: "$commentUsers",
+                                                        as: "user",
+                                                        cond: {
+                                                            $eq: [
+                                                                "$$user.authId",
+                                                                "$$comment.userId"
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                0
+                                            ]
+                                        }
+                                    },
+                                    in: "$$matchedUser.avatar"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]);
+
     if (!article) {
         throw new ApiError(404, "Article not found");
     }

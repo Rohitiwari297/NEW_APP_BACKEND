@@ -6,6 +6,11 @@ const articleSchema = new mongoose.Schema({
         ref: "Category"
     },
 
+    language: {
+        type: String,
+        default: "English"
+    },
+
     newsName: {
         type: String,
     },

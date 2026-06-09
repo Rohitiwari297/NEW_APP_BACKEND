@@ -18,7 +18,7 @@ const parseUploadArray = (files, fieldName) => {
 // Create a new article
 export const createArticle = AsyncHandler(async (req, res) => {
     console.log('req.body', req.body)
-    const { catId, newsName, content, images, videos } = req.body;
+    const { catId, newsName, content, images, videos, language } = req.body;
 
     const imageUploadData = parseUploadArray(req.files, "images");
     const videoUploadData = parseUploadArray(req.files, "videos");
@@ -36,6 +36,7 @@ export const createArticle = AsyncHandler(async (req, res) => {
             catId,
             newsName,
             content,
+            language,
             images: imageUploadData ?? images,
             videos: videoUploadData ?? videos,
         });
@@ -70,6 +71,9 @@ export const createArticle = AsyncHandler(async (req, res) => {
 // Get all articles or filter by category
 export const getArticles = AsyncHandler(async (req, res) => {
     const query = {};
+    const authId = req.userId
+
+    console.log('authId', authId)
 
     if (req.query.catId) {
         if (!mongoose.Types.ObjectId.isValid(req.query.catId)) {
@@ -78,8 +82,105 @@ export const getArticles = AsyncHandler(async (req, res) => {
         query.catId = req.query.catId;
     }
 
-    const articles = await Article.find(query)
-        .populate("catId", "catName");
+    const articles = await Article.aggregate([
+        // Category
+        {
+            $lookup: {
+                from: "categories",
+                localField: "catId",
+                foreignField: "_id",
+                as: "category"
+            }
+        },
+        {
+            $unwind: {
+                path: "$category",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        // Social
+        {
+            $lookup: {
+                from: "socials",
+                localField: "_id",
+                foreignField: "articleId",
+                as: "social"
+            }
+        },
+        {
+            $unwind: {
+                path: "$social",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        {
+            $project: {
+                newsName: 1,
+                content: 1,
+                images: 1,
+                videos: 1,
+                createdAt: 1,
+
+                category: {
+                    _id: "$category._id",
+                    catName: "$category.catName"
+                },
+
+                isLiked: {
+                    $in: [
+                        new mongoose.Types.ObjectId(authId),
+                        { $ifNull: ["$social.likes", []] }
+                    ]
+                },
+
+                likesCount: {
+                    $size: {
+                        $ifNull: ["$social.likes", []]
+                    }
+                },
+
+                dislikesCount: {
+                    $size: {
+                        $ifNull: ["$social.dislikes", []]
+                    }
+                },
+
+                isDisliked: {
+                    $in: [
+                        new mongoose.Types.ObjectId(authId),
+                        { $ifNull: ["$social.dislikes", []] }
+                    ]
+                },
+
+                savesCount: {
+                    $size: {
+                        $ifNull: ["$social.saves", []]
+                    }
+                },
+
+                isSaved: {
+                    $in: [
+                        new mongoose.Types.ObjectId(authId),
+                        { $ifNull: ["$social.saves", []] }
+                    ]
+                },
+
+                commentsCount: {
+                    $size: {
+                        $ifNull: ["$social.comments", []]
+                    }
+                }
+            }
+        },
+
+        {
+            $sort: {
+                createdAt: -1
+            }
+        }
+    ]);
 
     return res.status(200).json(
         new ApiResponse(200, "Articles fetched successfully", articles)

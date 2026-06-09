@@ -11,7 +11,7 @@ const parseUploadArray = (files, fieldName) => {
     if (!files?.[fieldName]) return undefined;
     return files[fieldName].map((file) => ({
         public_id: file.filename,
-        url: `uploads\${path.basename(file.path)}`,
+        url: `uploads/${path.basename(file.path)}`,
     }));
 };
 

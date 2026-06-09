@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import SocialMediaModel from "../../models/socialMedia.model.js";
 import ApiError from "../../utils/ApiErrorHandler.js"
 import ApiResponse from "../../utils/ApiRespinseHandler.js";
@@ -173,6 +174,109 @@ export const saveArticle = AsyncHandler(async (req, res) => {
 
 
 })
+
+export const getSavedArticles = AsyncHandler(async (req, res) => {
+    const userId = req.userId;
+
+    if (!userId) {
+        throw new ApiError(401, "Unauthorized user");
+    }
+
+    const savedArticles = await SocialMediaModel.aggregate([
+        {
+            $match: {
+                saves: new mongoose.Types.ObjectId(userId)
+            }
+        },
+
+        {
+            $lookup: {
+                from: "news", // apni Article collection ka actual name check kar lena
+                localField: "articleId",
+                foreignField: "_id",
+                as: "article"
+            }
+        },
+
+        {
+            $unwind: "$article"
+        },
+
+        {
+            $lookup: {
+                from: "categories",
+                localField: "article.catId",
+                foreignField: "_id",
+                as: "category"
+            }
+        },
+
+        {
+            $unwind: {
+                path: "$category",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        {
+            $project: {
+                _id: "$article._id",
+                newsName: "$article.newsName",
+                content: "$article.content",
+                images: "$article.images",
+                videos: "$article.videos",
+                createdAt: "$article.createdAt",
+
+                category: {
+                    _id: "$category._id",
+                    catName: "$category.catName"
+                },
+
+                likesCount: {
+                    $size: {
+                        $ifNull: ["$likes", []]
+                    }
+                },
+
+                dislikesCount: {
+                    $size: {
+                        $ifNull: ["$dislikes", []]
+                    }
+                },
+
+                savesCount: {
+                    $size: {
+                        $ifNull: ["$saves", []]
+                    }
+                },
+
+                commentsCount: {
+                    $size: {
+                        $ifNull: ["$comments", []]
+                    }
+                },
+
+                isSaved: {
+                    $literal: true
+                }
+            }
+        },
+
+        {
+            $sort: {
+                createdAt: -1
+            }
+        }
+    ]);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            "Saved articles fetched successfully",
+            savedArticles
+        )
+    );
+});
 
 export const getSocialDetails = AsyncHandler(async (req, res) => {
     const { articleId } = req.params;

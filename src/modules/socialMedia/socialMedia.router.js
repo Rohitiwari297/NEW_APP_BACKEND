@@ -1,8 +1,10 @@
 import { Router } from 'express'
 import { isLoggedIn } from '../../middleware/authMiddleware.js'
-import { commentOnArticle, dislikeArticle, getSocialDetails, likeArticle, saveArticle } from './socialMedia.controller.js'
+import { commentOnArticle, dislikeArticle, getSavedArticles, getSocialDetails, likeArticle, saveArticle } from './socialMedia.controller.js'
 
 const social = Router()
+social.route("/saved")
+    .get(isLoggedIn, getSavedArticles);
 
 social.route('/:articleId')
     .get(isLoggedIn, getSocialDetails)
@@ -13,6 +15,7 @@ social.route('/:articleId/dislike')
 
 social.route('/:articleId/comment')
     .post(isLoggedIn, commentOnArticle);
+
 
 social.route('/:articleId/save')
     .post(isLoggedIn, saveArticle)

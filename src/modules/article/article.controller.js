@@ -441,3 +441,22 @@ export const deleteArticle = AsyncHandler(async (req, res) => {
 
     res.status(200).json(new ApiResponse(200, "Article deleted successfully", article));
 });
+
+export const searchArticles = AsyncHandler(async (req, res) => {
+    const search = req.query.search;
+
+    if (!search) {
+        throw new ApiError(400, "Search keyword is required");
+    }
+
+    const articles = await Article.find({
+        newsName: {
+            $regex: search,
+            $options: "i"
+        }
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, "Articles fetched successfully", articles)
+    );
+});

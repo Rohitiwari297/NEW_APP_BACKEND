@@ -4,3 +4,10 @@ export const roleContaints = {
     reporter: "REPORTER"
 
 }
+
+export const langContaints = {
+    hindi: "HINDI",
+    english: "ENGLISH",
+    telugu: "TELUGU",
+    tamil: "TAMIL"
+}

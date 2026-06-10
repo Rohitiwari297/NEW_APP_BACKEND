@@ -10,10 +10,12 @@ import config from '../../config/config.js'
 import { setAuthCookies } from '../../utils/cookie.Handler.js'
 import sessionModel from '../../models/session.model.js'
 import jwt from 'jsonwebtoken'
+import path from 'path'
 
 export const signup = AsyncHandler(async (req, res) => {
-    const { fullName, email, password } = req.body;
-    if (!fullName || !email || !password) {
+    const { fullName, email, password, location, role } = req.body;
+
+    if (!fullName || !email || !password || !location) {
         fileDelete(req.file?.path)
         throw new ApiError(400, 'All fields are mendatory')
     };
@@ -38,10 +40,17 @@ export const signup = AsyncHandler(async (req, res) => {
         throw new ApiError(400, 'Failed to create auth')
     }
 
+    const image = req.file.path
+    const result = `uploads/${path.basename(image)}`;
+    console.log('image', result)
+
+    const roleInCaps = role.toUpperCase()
     const user = await User.create({
         authId: auth._id,
         fullName: fullName,
-        // avitar: avitar
+        role: roleInCaps,
+        location,
+        avitar: result
     })
 
     if (!user) {
@@ -51,7 +60,9 @@ export const signup = AsyncHandler(async (req, res) => {
 
     const responseData = {
         email: auth.email,
-        fullName: user.fullName
+        fullName: user.fullName,
+        role: user.role,
+        location: user.location
     }
 
     return res.status(201).json(

@@ -3,6 +3,7 @@ import User from "../../models/user.model.js";
 import ApiError from "../../utils/ApiErrorHandler.js";
 import ApiResponse from "../../utils/ApiRespinseHandler.js";
 import AsyncHandler from "../../utils/AsyncHandler.js";
+import path from 'path'
 
 export const getProfile = AsyncHandler(async (req, res) => {
     console.log("req.query =>", req.query);
@@ -14,7 +15,7 @@ export const getProfile = AsyncHandler(async (req, res) => {
         queryObj.authId = req.query.authId
     }
 
-    if ( req.userId){
+    if (req.userId) {
         queryObj.authId = req.userId
     }
 
@@ -38,7 +39,30 @@ export const getProfile = AsyncHandler(async (req, res) => {
 });
 
 export const updateProfile = AsyncHandler(async (req, res) => {
-    const { name } = req.body;
+    const { fullName, location } = req.body;
+    const userId = req.userId
+
+    const user = await User.findOne({
+        authId: userId
+    })
+
+    if (!user) {
+        throw new ApiError(401, 'Unauthorized user')
+    }
+
+    const avitar = req.file.path
+    const result = `uploads/${path.basename(avitar)}`;
+
+    user.fullName = fullName ?? user.fullName;
+    user.location = location ?? user.location;
+    user.avitar = result ?? user.avitar;
+
+    await user.save();
+
+    res.status(200).json(
+        new ApiResponse(200, 'Profile updated successfully', user)
+    )
+
 
 });
 

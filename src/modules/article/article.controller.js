@@ -17,6 +17,8 @@ const parseUploadArray = (files, fieldName) => {
 
 // Create a new article
 export const createArticle = AsyncHandler(async (req, res) => {
+    const userId = req.userId
+
     console.log('req.body', req.body)
     const { catId, newsName, content, images, videos, language } = req.body;
 
@@ -24,6 +26,11 @@ export const createArticle = AsyncHandler(async (req, res) => {
     const videoUploadData = parseUploadArray(req.files, "videos");
 
     try {
+
+        if (!userId) {
+            throw new ApiError(401, "Unauthorized");
+        }
+
         if (!content) {
             throw new ApiError(400, "News content is required");
         }
@@ -32,11 +39,24 @@ export const createArticle = AsyncHandler(async (req, res) => {
             throw new ApiError(400, "Invalid category ID format");
         }
 
+        const user = await User.findOne({
+            authId: userId
+        })
+
+        if (!user) {
+            throw new ApiError(400, 'Invalid user')
+        }
+
+        const languageInCaps = language.toUpperCase()
         const newArticle = await Article.create({
             catId,
+            createdBy: {
+                name: user.fullName,
+                location: user.location
+            },
             newsName,
             content,
-            language,
+            language: languageInCaps,
             images: imageUploadData ?? images,
             videos: videoUploadData ?? videos,
         });
@@ -77,10 +97,18 @@ export const getArticles = AsyncHandler(async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(req.query.catId)) {
             throw new ApiError(400, "Invalid category ID format");
         }
-        query.catId = req.query.catId;
+        query.catId = new mongoose.Types.ObjectId(req.query.catId);
+    }
+
+    if (req.query.lang) {
+        query.language = req.query.lang; // Hindi, English, Tamil
     }
 
     const articles = await Article.aggregate([
+        {
+            $match: query
+        },
+
         // Category
         {
             $lookup: {
@@ -119,6 +147,7 @@ export const getArticles = AsyncHandler(async (req, res) => {
                 content: 1,
                 images: 1,
                 videos: 1,
+                language: 1,
                 createdAt: 1,
 
                 category: {
@@ -134,15 +163,11 @@ export const getArticles = AsyncHandler(async (req, res) => {
                 },
 
                 likesCount: {
-                    $size: {
-                        $ifNull: ["$social.likes", []]
-                    }
+                    $size: { $ifNull: ["$social.likes", []] }
                 },
 
                 dislikesCount: {
-                    $size: {
-                        $ifNull: ["$social.dislikes", []]
-                    }
+                    $size: { $ifNull: ["$social.dislikes", []] }
                 },
 
                 isDisliked: {
@@ -153,9 +178,7 @@ export const getArticles = AsyncHandler(async (req, res) => {
                 },
 
                 savesCount: {
-                    $size: {
-                        $ifNull: ["$social.saves", []]
-                    }
+                    $size: { $ifNull: ["$social.saves", []] }
                 },
 
                 isSaved: {
@@ -166,9 +189,7 @@ export const getArticles = AsyncHandler(async (req, res) => {
                 },
 
                 commentsCount: {
-                    $size: {
-                        $ifNull: ["$social.comments", []]
-                    }
+                    $size: { $ifNull: ["$social.comments", []] }
                 }
             }
         },

@@ -17,13 +17,16 @@ const UserSchema = new mongoose.Schema({
         validator: validateName,
     },
     phone: String,
-    avatar: String,
+    avitar: String,
     role: {
         type: String,
         enum: [roleContaints.user, roleContaints.admin, roleContaints.reporter],
         default: roleContaints.user,
+    },
+    location: {
+        type: String
     }
-});
+}, { timestamps: true });
 
 const User = mongoose.model('User', UserSchema);
 export default User;

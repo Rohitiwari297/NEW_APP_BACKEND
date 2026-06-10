@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { langContaints } from '../validators/constaints.js'
 
 const articleSchema = new mongoose.Schema({
     catId: {
@@ -6,9 +7,14 @@ const articleSchema = new mongoose.Schema({
         ref: "Category"
     },
 
+    createdBy: {
+        type: [],
+    },
+
     language: {
         type: String,
-        default: "English"
+        enum: [langContaints.hindi, langContaints.english, langContaints.tamil, langContaints.telugu],
+        default: langContaints.english
     },
 
     newsName: {

@@ -12,7 +12,7 @@ const articleUploads = upload.fields([
 ]);
 
 article.route('/')
-    .post(articleUploads, createArticle)
+    .post(isLoggedIn, articleUploads, createArticle)
     .get(isLoggedIn, getArticles);
 
 article.route('/:id')

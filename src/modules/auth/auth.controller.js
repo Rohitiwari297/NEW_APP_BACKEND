@@ -40,8 +40,8 @@ export const signup = AsyncHandler(async (req, res) => {
         throw new ApiError(400, 'Failed to create auth')
     }
 
-    const image = req.file.path
-    const result = `uploads/${path.basename(image)}`;
+    const image = req.file?.path
+    const result = image ? `uploads/${path.basename(image)}` : '';
     console.log('image', result)
 
     const roleInCaps = role.toUpperCase()

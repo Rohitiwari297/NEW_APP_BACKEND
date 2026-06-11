@@ -51,7 +51,7 @@ export const updateProfile = AsyncHandler(async (req, res) => {
     }
 
     const avitar = req.file.path
-    const result = `uploads/${path.basename(avitar)}`;
+    const result = avitar ? `uploads/${path.basename(avitar)}` : user.avitar;
 
     user.fullName = fullName ?? user.fullName;
     user.location = location ?? user.location;

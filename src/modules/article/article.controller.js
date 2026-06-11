@@ -20,7 +20,7 @@ export const createArticle = AsyncHandler(async (req, res) => {
     const userId = req.userId
 
     console.log('req.body', req.body)
-    const { catId, newsName, content, images, videos, language } = req.body;
+    const { catId, newsName, content, images, videos, language, tags } = req.body;
 
     const imageUploadData = parseUploadArray(req.files, "images");
     const videoUploadData = parseUploadArray(req.files, "videos");
@@ -47,6 +47,9 @@ export const createArticle = AsyncHandler(async (req, res) => {
             throw new ApiError(400, 'Invalid user')
         }
 
+
+        const saparateTags = tags?.split(' ')
+
         const languageInCaps = language.toUpperCase()
         const newArticle = await Article.create({
             catId,
@@ -56,6 +59,7 @@ export const createArticle = AsyncHandler(async (req, res) => {
             },
             newsName,
             content,
+            tags: saparateTags,
             language: languageInCaps,
             images: imageUploadData ?? images,
             videos: videoUploadData ?? videos,
@@ -103,6 +107,16 @@ export const getArticles = AsyncHandler(async (req, res) => {
     if (req.query.lang) {
         query.language = req.query.lang; // Hindi, English, Tamil
     }
+    const search = req.query.search;
+
+    if (search) {
+
+        query.newsName = {
+            $regex: search,
+            $options: "i"
+        }
+    }
+
 
     const articles = await Article.aggregate([
         {
@@ -460,3 +474,19 @@ export const searchArticles = AsyncHandler(async (req, res) => {
         new ApiResponse(200, "Articles fetched successfully", articles)
     );
 });
+
+export const createHashtag = AsyncHandler(async (req, res) => {
+    const { tags } = req.body;
+    const { articleId } = req.params;
+
+    if (!tags) {
+        throw new ApiError(400, 'Tag is required')
+    }
+
+    const newtag = tags.split(' ')
+
+
+
+
+
+})

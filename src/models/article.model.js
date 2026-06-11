@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { langContaints } from '../validators/constaints.js'
+import { type } from "os";
 
 const articleSchema = new mongoose.Schema({
     catId: {
@@ -25,6 +26,10 @@ const articleSchema = new mongoose.Schema({
         type: String,
         required: [true, "News content is required"], // Khali content submit nahi hoga
         trim: true // Aage aur peeche ke faltu spaces (spaces/newlines) automatic hat jayenge
+    },
+
+    tags: {
+        type: []
     },
 
     images: [

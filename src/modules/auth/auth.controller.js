@@ -44,7 +44,7 @@ export const signup = AsyncHandler(async (req, res) => {
     const result = image ? `uploads/${path.basename(image)}` : '';
     console.log('image', result)
 
-    const roleInCaps = role.toUpperCase()
+    const roleInCaps = role?.toUpperCase()
     const user = await User.create({
         authId: auth._id,
         fullName: fullName,
@@ -181,6 +181,34 @@ export const refreshAccessToken = AsyncHandler(async (req, res) => {
         new ApiResponse(200, 'Access token generate sucessfully', { accessToken })
     )
 
+
+})
+
+export const resetpassword = AsyncHandler(async (req, res) => {
+    const userId = req.userId;
+    console.log('userid', userId)
+    console.log('useriddd', req.userId)
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+        throw new ApiError(400, 'All fields are required')
+    }
+
+    const user = await Auth.findOne({ _id: userId })
+    if (!user) {
+        throw new ApiError(400, 'Invalid request')
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password)
+    if (!isPasswordCorrect) throw new ApiError(401, `Invalid credentials`);
+
+    const hashedPassword = await bcrypt.hash(newPassword, Number(config.BCRYPT_SALT_ROUNDS))
+    user.password = hashedPassword ?? user.password;
+    user.save();
+
+    res.status(200).json(
+        new ApiResponse(200, 'Password updated successfully',)
+    )
 
 })
 

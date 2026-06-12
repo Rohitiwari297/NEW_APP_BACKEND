@@ -9,7 +9,9 @@ const articleSchema = new mongoose.Schema({
     },
 
     createdBy: {
-        type: [],
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
     },
 
     language: {

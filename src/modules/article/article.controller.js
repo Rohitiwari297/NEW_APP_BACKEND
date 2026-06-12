@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import { fileDelete } from "../../utils/FileDelete.js";
 import path from 'path'
 import User from "../../models/user.model.js";
+import { roleContaints } from '../../validators/constaints.js'
 
 const parseUploadArray = (files, fieldName) => {
     if (!files?.[fieldName]) return undefined;
@@ -18,6 +19,12 @@ const parseUploadArray = (files, fieldName) => {
 // Create a new article
 export const createArticle = AsyncHandler(async (req, res) => {
     const userId = req.userId
+    const userRole = req.user.role
+    console.log('userRole', userRole)
+
+    if ([userRole !== roleContaints.admin, userRole !== roleContaints.reporter].includes(userRole)) {
+        throw new ApiError(403, "You are not Authorized to access this api");
+    }
 
     console.log('req.body', req.body)
     const { catId, newsName, content, images, videos, language, tags } = req.body;
@@ -53,10 +60,7 @@ export const createArticle = AsyncHandler(async (req, res) => {
         const languageInCaps = language.toUpperCase()
         const newArticle = await Article.create({
             catId,
-            createdBy: {
-                name: user.fullName,
-                location: user.location
-            },
+            createdBy: user._id,
             newsName,
             content,
             tags: saparateTags,
@@ -94,29 +98,46 @@ export const createArticle = AsyncHandler(async (req, res) => {
 
 // Get all articles or filter by category
 export const getArticles = AsyncHandler(async (req, res) => {
-    const userId = req.userId;
+    const authId = req.userId;
+    const userRole = req.user.role; // ya req.user.userRole, jo tumhare token me hai
+
     const query = {};
 
+    // Reporter ke liye sirf uski articles
+    if (userRole === roleContaints.reporter) {
+
+        const user = await User.findOne({
+            authId: authId
+        });
+
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+
+        query.createdBy = user._id;
+    }
+
+    // Category filter
     if (req.query.catId) {
         if (!mongoose.Types.ObjectId.isValid(req.query.catId)) {
             throw new ApiError(400, "Invalid category ID format");
         }
+
         query.catId = new mongoose.Types.ObjectId(req.query.catId);
     }
 
+    // Language filter
     if (req.query.lang) {
-        query.language = req.query.lang; // Hindi, English, Tamil
+        query.language = req.query.lang.toUpperCase();
     }
-    const search = req.query.search;
 
-    if (search) {
-
+    // Search filter
+    if (req.query.search) {
         query.newsName = {
-            $regex: search,
+            $regex: req.query.search,
             $options: "i"
-        }
+        };
     }
-
 
     const articles = await Article.aggregate([
         {
@@ -135,6 +156,22 @@ export const getArticles = AsyncHandler(async (req, res) => {
         {
             $unwind: {
                 path: "$category",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        // Reporter Details
+        {
+            $lookup: {
+                from: "users",
+                localField: "createdBy",
+                foreignField: "_id",
+                as: "reporter"
+            }
+        },
+        {
+            $unwind: {
+                path: "$reporter",
                 preserveNullAndEmptyArrays: true
             }
         },
@@ -162,7 +199,14 @@ export const getArticles = AsyncHandler(async (req, res) => {
                 images: 1,
                 videos: 1,
                 language: 1,
+                tags: 1,
                 createdAt: 1,
+
+                reporter: {
+                    _id: "$reporter._id",
+                    fullName: "$reporter.fullName",
+                    location: "$reporter.location"
+                },
 
                 category: {
                     _id: "$category._id",
@@ -171,39 +215,47 @@ export const getArticles = AsyncHandler(async (req, res) => {
 
                 isLiked: {
                     $in: [
-                        new mongoose.Types.ObjectId(userId),
+                        new mongoose.Types.ObjectId(authId),
                         { $ifNull: ["$social.likes", []] }
                     ]
                 },
 
                 likesCount: {
-                    $size: { $ifNull: ["$social.likes", []] }
-                },
-
-                dislikesCount: {
-                    $size: { $ifNull: ["$social.dislikes", []] }
+                    $size: {
+                        $ifNull: ["$social.likes", []]
+                    }
                 },
 
                 isDisliked: {
                     $in: [
-                        new mongoose.Types.ObjectId(userId),
+                        new mongoose.Types.ObjectId(authId),
                         { $ifNull: ["$social.dislikes", []] }
                     ]
                 },
 
-                savesCount: {
-                    $size: { $ifNull: ["$social.saves", []] }
+                dislikesCount: {
+                    $size: {
+                        $ifNull: ["$social.dislikes", []]
+                    }
                 },
 
                 isSaved: {
                     $in: [
-                        new mongoose.Types.ObjectId(userId),
+                        new mongoose.Types.ObjectId(authId),
                         { $ifNull: ["$social.saves", []] }
                     ]
                 },
 
+                savesCount: {
+                    $size: {
+                        $ifNull: ["$social.saves", []]
+                    }
+                },
+
                 commentsCount: {
-                    $size: { $ifNull: ["$social.comments", []] }
+                    $size: {
+                        $ifNull: ["$social.comments", []]
+                    }
                 }
             }
         },
@@ -216,7 +268,11 @@ export const getArticles = AsyncHandler(async (req, res) => {
     ]);
 
     return res.status(200).json(
-        new ApiResponse(200, "Articles fetched successfully", articles)
+        new ApiResponse(
+            200,
+            "Articles fetched successfully",
+            articles
+        )
     );
 });
 
@@ -390,8 +446,14 @@ export const getArticle = AsyncHandler(async (req, res) => {
 
 // Update an article by ID
 export const updateArticle = AsyncHandler(async (req, res) => {
+
     const { id } = req.params;
     const { catId, newsName, content, images, videos } = req.body;
+    const userRole = req.user.role
+
+    if (![roleContaints.admin, roleContaints.reporter].includes(userRole)) {
+        throw new ApiError(403, "You are not Authorized to access this api");
+    }
 
     const imageUploadData = parseUploadArray(req.files, "images");
     const videoUploadData = parseUploadArray(req.files, "videos");
@@ -443,10 +505,19 @@ export const updateArticle = AsyncHandler(async (req, res) => {
 
 // Delete an article by ID
 export const deleteArticle = AsyncHandler(async (req, res) => {
+    const userRole = req.user.role
     const { id } = req.params;
+
+    console.log('userRole', userRole)
+
+    if (![roleContaints.admin, roleContaints.reporter].includes(userRole)) {
+        throw new ApiError(403, "You are not Authorized to access this api");
+    }
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new ApiError(400, "Invalid article ID format");
     }
+
 
     const article = await Article.findByIdAndDelete(id);
     if (!article) {

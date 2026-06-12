@@ -40,30 +40,30 @@ export const getProfile = AsyncHandler(async (req, res) => {
 
 export const updateProfile = AsyncHandler(async (req, res) => {
     const { fullName, location } = req.body;
-    const userId = req.userId
+    const userId = req.userId;
 
     const user = await User.findOne({
         authId: userId
-    })
+    });
 
     if (!user) {
-        throw new ApiError(401, 'Unauthorized user')
+        throw new ApiError(401, "Unauthorized user");
     }
 
-    const avitar = req.file.path
-    const result = avitar ? `uploads/${path.basename(avitar)}` : user.avitar;
+    const avitar = req.file?.path;
+
+    if (avitar) {
+        user.avitar = `uploads/${path.basename(avitar)}`;
+    }
 
     user.fullName = fullName ?? user.fullName;
     user.location = location ?? user.location;
-    user.avitar = result ?? user.avitar;
 
     await user.save();
 
     res.status(200).json(
-        new ApiResponse(200, 'Profile updated successfully', user)
-    )
-
-
+        new ApiResponse(200, "Profile updated successfully", user)
+    );
 });
 
 export const updateAvatar = AsyncHandler(async (req, res) => {

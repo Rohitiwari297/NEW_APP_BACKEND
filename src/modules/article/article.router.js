@@ -20,6 +20,6 @@ article.get("/search", isLoggedIn, searchArticles);
 article.route('/:id')
     .get(getArticle)
     .patch(articleUploads, updateArticle)
-    .delete(deleteArticle);
+    .delete(isLoggedIn, deleteArticle);
 
 export default article;

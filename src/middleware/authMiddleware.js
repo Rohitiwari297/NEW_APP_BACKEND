@@ -14,5 +14,6 @@ export const isLoggedIn = AsyncHandler(async (req, res, next) => {
 
     const decoded = jwt.verify(token, config.ACCESS_TOKEN_SECRET)
     req.userId = decoded.id
+    req.user = decoded
     next();
 });

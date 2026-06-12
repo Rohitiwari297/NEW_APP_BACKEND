@@ -8,6 +8,7 @@ import path from 'path'
 import User from "../../models/user.model.js";
 import { roleContaints } from '../../validators/constaints.js'
 import Category from '../../models/category.model.js'
+import { takeCoverage } from "v8";
 
 const parseUploadArray = (files, fieldName) => {
     if (!files?.[fieldName]) return undefined;
@@ -694,6 +695,28 @@ export const createHashtag = AsyncHandler(async (req, res) => {
  */
 
 export const getTags = AsyncHandler(async (req, res) => {
-    const tagData = await Article.find()
 
-})
+    const result = await Article.aggregate([
+        {
+            $unwind: "$tags"
+        },
+        {
+            $group: {
+                _id: null,
+                tags: {
+                    $addToSet: "$tags"
+                }
+            }
+        }
+    ]);
+
+    const tags = result[0]?.tags || [];
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            "Tags fetched successfully",
+            { tags }
+        )
+    );
+});

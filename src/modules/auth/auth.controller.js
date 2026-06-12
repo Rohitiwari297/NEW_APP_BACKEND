@@ -58,11 +58,27 @@ export const signup = AsyncHandler(async (req, res) => {
         throw new ApiError(400, 'Failed to create user')
     }
 
+    const refreshToken = auth.generateRefreshToken(user)
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+    //create session
+    const session = await sessionModel.create({
+        user: user._id,
+        refreshTokenHash,
+        ip: req.ip,
+        userAgent: req.headers["user-agent"]
+    })
+
+    const accessToken = auth.generateAccessToken(user)
+
+    setAuthCookies(res, refreshToken)
+
     const responseData = {
         email: auth.email,
         fullName: user.fullName,
         role: user.role,
-        location: user.location
+        location: user.location,
+        accessToken: accessToken
     }
 
     return res.status(201).json(
@@ -167,3 +183,5 @@ export const refreshAccessToken = AsyncHandler(async (req, res) => {
 
 
 })
+
+

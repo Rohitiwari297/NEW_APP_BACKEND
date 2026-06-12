@@ -7,6 +7,7 @@ import { fileDelete } from "../../utils/FileDelete.js";
 import path from 'path'
 import User from "../../models/user.model.js";
 import { roleContaints } from '../../validators/constaints.js'
+import Category from '../../models/category.model.js'
 
 const parseUploadArray = (files, fieldName) => {
     if (!files?.[fieldName]) return undefined;
@@ -99,25 +100,10 @@ export const createArticle = AsyncHandler(async (req, res) => {
 // Get all articles or filter by category
 export const getArticles = AsyncHandler(async (req, res) => {
     const authId = req.userId;
-    const userRole = req.user.role; // ya req.user.userRole, jo tumhare token me hai
 
     const query = {};
 
-    // Reporter ke liye sirf uski articles
-    if (userRole === roleContaints.reporter) {
-
-        const user = await User.findOne({
-            authId: authId
-        });
-
-        if (!user) {
-            throw new ApiError(404, "User not found");
-        }
-
-        query.createdBy = user._id;
-    }
-
-    // Category filter
+    // Category Filter
     if (req.query.catId) {
         if (!mongoose.Types.ObjectId.isValid(req.query.catId)) {
             throw new ApiError(400, "Invalid category ID format");
@@ -126,12 +112,12 @@ export const getArticles = AsyncHandler(async (req, res) => {
         query.catId = new mongoose.Types.ObjectId(req.query.catId);
     }
 
-    // Language filter
+    // Language Filter
     if (req.query.lang) {
         query.language = req.query.lang.toUpperCase();
     }
 
-    // Search filter
+    // Search Filter
     if (req.query.search) {
         query.newsName = {
             $regex: req.query.search,
@@ -139,9 +125,171 @@ export const getArticles = AsyncHandler(async (req, res) => {
         };
     }
 
+    // const users = await User.find();
+    // console.log(users);
+
+    // const categories = await Category.find();
+    // console.log(categories);
+
     const articles = await Article.aggregate([
         {
             $match: query
+        },
+
+        // Category Details
+        {
+            $lookup: {
+                from: "categories",
+                localField: "catId",
+                foreignField: "_id",
+                as: "category"
+            }
+        },
+        {
+            $unwind: {
+                path: "$category",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        // Reporter Details
+        {
+            $lookup: {
+                from: "users",
+                localField: "createdBy",
+                foreignField: "_id",
+                as: "reporter"
+            }
+        },
+        {
+            $unwind: {
+                path: "$reporter",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        // Social Details
+        {
+            $lookup: {
+                from: "socials",
+                localField: "_id",
+                foreignField: "articleId",
+                as: "social"
+            }
+        },
+        {
+            $unwind: {
+                path: "$social",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        {
+            $project: {
+                _id: 1,
+                newsName: 1,
+                content: 1,
+                images: 1,
+                videos: 1,
+                language: 1,
+                tags: 1,
+                createdAt: 1,
+                updatedAt: 1,
+
+                createdBy: {
+                    _id: "$reporter._id",
+                    name: "$reporter.fullName",
+                    location: "$reporter.location"
+                },
+
+                category: {
+                    _id: "$category._id",
+                    catName: "$category.catName"
+                },
+
+                isLiked: {
+                    $in: [
+                        new mongoose.Types.ObjectId(authId),
+                        { $ifNull: ["$social.likes", []] }
+                    ]
+                },
+
+                likesCount: {
+                    $size: {
+                        $ifNull: ["$social.likes", []]
+                    }
+                },
+
+                isDisliked: {
+                    $in: [
+                        new mongoose.Types.ObjectId(authId),
+                        { $ifNull: ["$social.dislikes", []] }
+                    ]
+                },
+
+                dislikesCount: {
+                    $size: {
+                        $ifNull: ["$social.dislikes", []]
+                    }
+                },
+
+                isSaved: {
+                    $in: [
+                        new mongoose.Types.ObjectId(authId),
+                        { $ifNull: ["$social.saves", []] }
+                    ]
+                },
+
+                savesCount: {
+                    $size: {
+                        $ifNull: ["$social.saves", []]
+                    }
+                },
+
+                commentsCount: {
+                    $size: {
+                        $ifNull: ["$social.comments", []]
+                    }
+                }
+            }
+        },
+
+        {
+            $sort: {
+                createdAt: -1
+            }
+        }
+    ]);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            "Articles fetched successfully",
+            articles
+        )
+    );
+});
+
+//Get My articles or filter by category
+export const getMyArticles = AsyncHandler(async (req, res) => {
+    const authId = req.userId;
+    const userRole = req.user.role;
+
+    if (userRole !== roleContaints.reporter) {
+        throw new ApiError(403, "Only reporters can access this API");
+    }
+
+    const user = await User.findOne({ authId });
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    const articles = await Article.aggregate([
+        {
+            $match: {
+                createdBy: user._id
+            }
         },
 
         // Category
@@ -160,7 +308,7 @@ export const getArticles = AsyncHandler(async (req, res) => {
             }
         },
 
-        // Reporter Details
+        // Reporter
         {
             $lookup: {
                 from: "users",
@@ -213,37 +361,16 @@ export const getArticles = AsyncHandler(async (req, res) => {
                     catName: "$category.catName"
                 },
 
-                isLiked: {
-                    $in: [
-                        new mongoose.Types.ObjectId(authId),
-                        { $ifNull: ["$social.likes", []] }
-                    ]
-                },
-
                 likesCount: {
                     $size: {
                         $ifNull: ["$social.likes", []]
                     }
                 },
 
-                isDisliked: {
-                    $in: [
-                        new mongoose.Types.ObjectId(authId),
-                        { $ifNull: ["$social.dislikes", []] }
-                    ]
-                },
-
                 dislikesCount: {
                     $size: {
                         $ifNull: ["$social.dislikes", []]
                     }
-                },
-
-                isSaved: {
-                    $in: [
-                        new mongoose.Types.ObjectId(authId),
-                        { $ifNull: ["$social.saves", []] }
-                    ]
                 },
 
                 savesCount: {
@@ -559,5 +686,14 @@ export const createHashtag = AsyncHandler(async (req, res) => {
 
 
 
+
+})
+
+/**
+ * FETCHED ALL THE TAGS
+ */
+
+export const getTags = AsyncHandler(async (req, res) => {
+    const tagData = await Article.find()
 
 })

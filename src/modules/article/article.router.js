@@ -1,6 +1,6 @@
 import express from 'express';
 import upload from '../../middleware/uploadMiddleware.js';
-import { createArticle, getArticles, getArticle, updateArticle, deleteArticle, searchArticles } from './article.controller.js';
+import { createArticle, getArticles, getArticle, updateArticle, deleteArticle, searchArticles, getMyArticles } from './article.controller.js';
 import { isLoggedIn } from '../../middleware/authMiddleware.js';
 
 const article = express.Router();
@@ -17,9 +17,11 @@ article.route('/')
 
 article.get("/search", isLoggedIn, searchArticles);
 
+article.get("/my-articles", isLoggedIn, getMyArticles);
+
 article.route('/:id')
     .get(getArticle)
-    .patch(articleUploads, updateArticle)
+    .patch(isLoggedIn, articleUploads, updateArticle)
     .delete(isLoggedIn, deleteArticle);
 
 export default article;

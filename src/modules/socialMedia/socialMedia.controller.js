@@ -3,6 +3,7 @@ import SocialMediaModel from "../../models/socialMedia.model.js";
 import ApiError from "../../utils/ApiErrorHandler.js"
 import ApiResponse from "../../utils/ApiRespinseHandler.js";
 import AsyncHandler from "../../utils/AsyncHandler.js";
+import User from "../../models/user.model.js";
 
 export const likeArticle = AsyncHandler(async (req, res) => {
     const userId = req.userId;
@@ -287,7 +288,7 @@ export const getSocialDetails = AsyncHandler(async (req, res) => {
         return res.status(200).json(
             new ApiResponse(200, "No social activity found", {
                 likesCount: 0,
-                unlikesCount: 0,
+                dislikesCount: 0,
                 savesCount: 0,
                 commentsCount: 0,
                 comments: [],
@@ -295,13 +296,40 @@ export const getSocialDetails = AsyncHandler(async (req, res) => {
         );
     }
 
+    // Sare authIds nikalo comments se
+    const authIds = social.comments.map(comment => comment.userId);
+
+    // Users fetch karo authId ke basis par
+    const users = await User.find({
+        authId: { $in: authIds }
+    }).select("fullName location authId");
+
+    // Map banao fast lookup ke liye
+    const userMap = {};
+
+    users.forEach(user => {
+        userMap[user.authId.toString()] = {
+            _id: user._id,
+            fullName: user.fullName,
+            location: user.location
+        };
+    });
+
+    const comments = social.comments.map(comment => ({
+        _id: comment._id,
+        comment: comment.comment,
+        createdAt: comment.createdAt,
+
+        user: userMap[comment.userId?.toString()] || null
+    }));
+
     return res.status(200).json(
         new ApiResponse(200, "Social details fetched successfully", {
             likesCount: social.likes.length,
             dislikesCount: social.dislikes.length,
             savesCount: social.saves.length,
             commentsCount: social.comments.length,
-            comments: social.comments,
+            comments
         })
     );
 });

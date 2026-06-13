@@ -50,10 +50,19 @@ app.use('/api/v1/category', categoryRoute);
 app.use('/api/v1/articles', articleRoute);
 app.use('/api/v1/social-details', socialRouter);
 
+app.get('/err-test', (req, res, next) => {
+    next(new Error("Testing"));
+});
 
 
+app.use((err, req, res, next) => {
+    console.error(err);
 
-
+    return res.status(err.statusCode || 500).json({
+        success: false,
+        message: err.message || "Internal Server Error",
+    });
+});
 
 export default app;
 

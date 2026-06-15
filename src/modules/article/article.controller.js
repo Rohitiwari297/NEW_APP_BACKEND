@@ -607,8 +607,14 @@ export const updateArticle = AsyncHandler(async (req, res) => {
         article.newsName = newsName ?? article.newsName;
         article.content = content ?? article.content;
         article.status = req.body.status ?? article.status;
-        article.images = imageUploadData ?? images ?? article.images;
-        article.videos = videoUploadData ?? videos ?? article.videos;
+
+        if (imageUploadData && imageUploadData.length > 0) {
+            article.images = imageUploadData;
+        }
+
+        if (videoUploadData && videoUploadData.length > 0) {
+            article.videos = videoUploadData;
+        }
 
         await article.save();
         return res.status(200).json(

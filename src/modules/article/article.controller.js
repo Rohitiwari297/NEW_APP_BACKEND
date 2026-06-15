@@ -8,7 +8,7 @@ import path from 'path'
 import User from "../../models/user.model.js";
 import { roleContaints } from '../../validators/constaints.js'
 import Category from '../../models/category.model.js'
-import { takeCoverage } from "v8";
+
 
 const parseUploadArray = (files, fieldName) => {
     if (!files?.[fieldName]) return undefined;
@@ -22,13 +22,13 @@ const parseUploadArray = (files, fieldName) => {
 export const createArticle = AsyncHandler(async (req, res) => {
     const userId = req.userId
     const userRole = req.user.role
-    console.log('userRole', userRole)
+
 
     if ([userRole !== roleContaints.admin, userRole !== roleContaints.reporter].includes(userRole)) {
         throw new ApiError(403, "You are not Authorized to access this api");
     }
 
-    console.log('req.body', req.body)
+
     const { catId, newsName, content, images, videos, language, tags } = req.body;
 
     const imageUploadData = parseUploadArray(req.files, "images");
@@ -611,7 +611,7 @@ export const updateArticle = AsyncHandler(async (req, res) => {
             new ApiResponse(200, "Article updated successfully", article)
         );
     } catch (error) {
-        if (imageUploadData.length) {
+        if (imageUploadData?.length) {
             await Promise.all(
                 imageUploadData.map((file) => {
                     fileDelete(file.path)
@@ -619,7 +619,7 @@ export const updateArticle = AsyncHandler(async (req, res) => {
             )
         }
 
-        if (videoUploadData.length) {
+        if (videoUploadData?.length) {
             await Promise.all(
                 videoUploadData.map((file) => {
                     fileDelete(file.path)
@@ -636,7 +636,7 @@ export const deleteArticle = AsyncHandler(async (req, res) => {
     const userRole = req.user.role
     const { id } = req.params;
 
-    console.log('userRole', userRole)
+
 
     if (![roleContaints.admin, roleContaints.reporter].includes(userRole)) {
         throw new ApiError(403, "You are not Authorized to access this api");
@@ -720,6 +720,3 @@ export const getTags = AsyncHandler(async (req, res) => {
         )
     );
 });
-
-
-

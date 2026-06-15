@@ -69,3 +69,38 @@ export const updateProfile = AsyncHandler(async (req, res) => {
 export const updateAvatar = AsyncHandler(async (req, res) => {
 
 });
+
+export const getAllUsers = AsyncHandler(async (req, res) => {
+    const users = await User.find()
+        .populate({
+            path: 'authId',
+            select: 'email'
+        });
+
+    res.status(200).json(
+        new ApiResponse(200, 'Users fetched successfully', users)
+    );
+});
+
+export const updateUserStatus = AsyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['active', 'inactive'].includes(status)) {
+        throw new ApiError(400, 'Invalid status value');
+    }
+
+    const user = await User.findByIdAndUpdate(
+        id,
+        { status },
+        { new: true }
+    );
+
+    if (!user) {
+        throw new ApiError(404, 'User not found');
+    }
+
+    res.status(200).json(
+        new ApiResponse(200, 'User status updated successfully', user)
+    );
+});

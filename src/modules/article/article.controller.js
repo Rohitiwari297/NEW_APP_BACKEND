@@ -67,6 +67,7 @@ export const createArticle = AsyncHandler(async (req, res) => {
             content,
             tags: saparateTags,
             language: languageInCaps,
+            status: req.body.status || 'draft',
             images: imageUploadData ?? images,
             videos: videoUploadData ?? videos,
         });
@@ -194,6 +195,7 @@ export const getArticles = AsyncHandler(async (req, res) => {
                 videos: 1,
                 language: 1,
                 tags: 1,
+                status: 1,
                 createdAt: 1,
                 updatedAt: 1,
 
@@ -349,6 +351,7 @@ export const getMyArticles = AsyncHandler(async (req, res) => {
                 videos: 1,
                 language: 1,
                 tags: 1,
+                status: 1,
                 createdAt: 1,
 
                 reporter: {
@@ -463,9 +466,9 @@ export const getArticle = AsyncHandler(async (req, res) => {
 
         {
             $project: {
-                title: 1,
-                description: 1,
-
+                newsName: 1,
+                content: 1,
+                status: 1,
                 category: {
                     _id: "$category._id",
                     catName: "$category.catName"
@@ -603,6 +606,7 @@ export const updateArticle = AsyncHandler(async (req, res) => {
         article.catId = catId ?? article.catId;
         article.newsName = newsName ?? article.newsName;
         article.content = content ?? article.content;
+        article.status = req.body.status ?? article.status;
         article.images = imageUploadData ?? images ?? article.images;
         article.videos = videoUploadData ?? videos ?? article.videos;
 

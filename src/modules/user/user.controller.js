@@ -71,7 +71,16 @@ export const updateAvatar = AsyncHandler(async (req, res) => {
 });
 
 export const getAllUsers = AsyncHandler(async (req, res) => {
-    const users = await User.find()
+    const queryObj = {};
+    const reqQuery = req.query.userType
+    const roleInUpperCase = reqQuery.toUpperCase()
+
+    if (req.query.userType) {
+        queryObj.role = roleInUpperCase
+    }
+
+
+    const users = await User.find(queryObj)
         .populate({
             path: 'authId',
             select: 'email'

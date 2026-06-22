@@ -1,8 +1,8 @@
 export const roleContaints = {
     user: "USER",
     admin: "ADMIN",
-    reporter: "REPORTER"
-
+    reporter: "REPORTER",
+    editor: "EDITOR"
 }
 
 export const langContaints = {

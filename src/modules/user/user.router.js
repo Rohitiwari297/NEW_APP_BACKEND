@@ -1,5 +1,5 @@
 import express from "express";
-import { getAllUsers, getProfile, updateProfile, updateUserStatus } from "./user.controller.js";
+import { deleteUser, getAllUsers, getProfile, updateProfile, updateUserData, updateUserStatus } from "./user.controller.js";
 import { isLoggedIn } from "../../middleware/authMiddleware.js";
 import upload from '../../middleware/uploadMiddleware.js'
 
@@ -14,5 +14,9 @@ user.route("/all")
 
 user.route("/status/:id")
     .patch(isLoggedIn, updateUserStatus);
+
+user.route("/:id")
+    .patch(isLoggedIn, updateUserData)
+    .delete(isLoggedIn, deleteUser);
 
 export default user;

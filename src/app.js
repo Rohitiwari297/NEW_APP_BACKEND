@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import authRoute from './modules/auth/auth.router.js'
 import userRoute from './modules/user/user.router.js'
 import articleRoute from './modules/article/article.router.js'
+import editorRoute from './modules/editor/editor.router.js'
 import cookieParser from 'cookie-parser';
 import cors from 'cors'
 import categoryRoute from './modules/category/category.router.js';
@@ -48,6 +49,7 @@ app.use('/api/v1/auth', authRoute)
 app.use('/api/v1/users', userRoute);
 app.use('/api/v1/category', categoryRoute);
 app.use('/api/v1/articles', articleRoute);
+app.use('/api/v1/editor', editorRoute);
 app.use('/api/v1/social-details', socialRouter);
 
 app.get('/err-test', (req, res, next) => {

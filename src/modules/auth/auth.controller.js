@@ -11,6 +11,7 @@ import { setAuthCookies } from '../../utils/cookie.Handler.js'
 import sessionModel from '../../models/session.model.js'
 import jwt from 'jsonwebtoken'
 import path from 'path'
+import { roleContaints } from '../../validators/constaints.js'
 
 export const signup = AsyncHandler(async (req, res) => {
     const { fullName, email, password, location, role } = req.body;
@@ -48,9 +49,12 @@ export const signup = AsyncHandler(async (req, res) => {
     const user = await User.create({
         authId: auth._id,
         fullName: fullName,
-        role: roleInCaps,
+        role: roleInCaps || roleContaints.user,
         location,
-        avitar: result
+        avitar: result,
+        status: (roleInCaps || roleContaints.user) === roleContaints.user
+            ? "active"
+            : "inactive"
     })
 
     if (!user) {

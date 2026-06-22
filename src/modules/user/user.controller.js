@@ -73,10 +73,9 @@ export const updateAvatar = AsyncHandler(async (req, res) => {
 export const getAllUsers = AsyncHandler(async (req, res) => {
     const queryObj = {};
     const reqQuery = req.query.userType
-    const roleInUpperCase = reqQuery.toUpperCase()
 
-    if (req.query.userType) {
-        queryObj.role = roleInUpperCase
+    if (reqQuery) {
+        queryObj.role = reqQuery.toUpperCase();
     }
 
 
@@ -111,5 +110,46 @@ export const updateUserStatus = AsyncHandler(async (req, res) => {
 
     res.status(200).json(
         new ApiResponse(200, 'User status updated successfully', user)
+    );
+});
+
+export const updateUserData = AsyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { fullName, location, role, status } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) {
+        throw new ApiError(404, 'User not found');
+    }
+
+    if (fullName) user.fullName = fullName;
+    if (location) user.location = location;
+    if (role) user.role = role.toUpperCase();
+    if (status) user.status = status;
+
+    await user.save();
+
+    res.status(200).json(
+        new ApiResponse(200, 'User updated successfully', user)
+    );
+});
+
+export const deleteUser = AsyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+        throw new ApiError(404, 'User not found');
+    }
+
+    // Also delete the associated Auth record
+    if (user.authId) {
+        await Auth.findByIdAndDelete(user.authId);
+    }
+
+    await User.findByIdAndDelete(id);
+
+    res.status(200).json(
+        new ApiResponse(200, 'User and associated auth deleted successfully')
     );
 });

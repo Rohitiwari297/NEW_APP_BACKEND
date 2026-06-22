@@ -20,7 +20,7 @@ const UserSchema = new mongoose.Schema({
     avitar: String,
     role: {
         type: String,
-        enum: [roleContaints.user, roleContaints.admin, roleContaints.reporter],
+        enum: [roleContaints.user, roleContaints.admin, roleContaints.reporter, roleContaints.editor],
         default: roleContaints.user,
     },
     location: {
@@ -28,7 +28,7 @@ const UserSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['active', 'inactive'],
+        enum: ['active', 'inactive', 'pending'],
         default: 'active',
     }
 }, { timestamps: true });

@@ -137,6 +137,7 @@ export const getArticles = AsyncHandler(async (req, res) => {
     // const categories = await Category.find();
     // console.log(categories);
 
+    console.log('queru', query)
     const articles = await Article.aggregate([
         {
             $match: query

@@ -90,3 +90,29 @@ export const getCategory = AsyncHandler(async (req, res) => {
     }
 })
 
+export const deleteCategory = AsyncHandler(async (req, res) => {
+    const { catId } = req.params;
+
+    if (!catId) {
+        throw new ApiError(400, "Category id is required");
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(catId)) {
+        throw new ApiError(400, "Invalid Category id");
+    }
+
+    const deletedCategory = await Category.findByIdAndDelete(catId);
+
+    if (!deletedCategory) {
+        throw new ApiError(404, "Category not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            "Category deleted successfully",
+            deletedCategory
+        )
+    );
+});
+

@@ -9,6 +9,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors'
 import categoryRoute from './modules/category/category.router.js';
 import socialRouter from './modules/socialMedia/socialMedia.router.js';
+import advertisementRouter from './modules/advertisement/advertisement.router.js';
 import path from 'path'
 import { fileURLToPath } from "url";
 
@@ -51,6 +52,7 @@ app.use('/api/v1/category', categoryRoute);
 app.use('/api/v1/articles', articleRoute);
 app.use('/api/v1/editor', editorRoute);
 app.use('/api/v1/social-details', socialRouter);
+app.use('/api/v1/advertisement', advertisementRouter)
 
 app.get('/err-test', (req, res, next) => {
     next(new Error("Testing"));

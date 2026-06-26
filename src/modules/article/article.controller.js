@@ -281,9 +281,10 @@ export const getArticles = AsyncHandler(async (req, res) => {
 //Get My articles or filter by category
 export const getMyArticles = AsyncHandler(async (req, res) => {
     const authId = req.userId;
-    const userRole = req.user.role;
+    const userRoles = req.user.role;
+    const userRole = userRoles.toUpperCase()
 
-    if (userRole !== roleContaints.reporter || userRole !== roleContaints.editor) {
+    if (![roleContaints.reporter, roleContaints.editor].includes(userRole)) {
         throw new ApiError(403, "Only reporters can access this API");
     }
 

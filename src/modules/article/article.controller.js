@@ -105,6 +105,7 @@ export const getArticles = AsyncHandler(async (req, res) => {
     const role = req.user?.role;
     const query = {};
 
+
     // Category Filter
     if (req.query.catId) {
         if (!mongoose.Types.ObjectId.isValid(req.query.catId)) {
@@ -119,7 +120,7 @@ export const getArticles = AsyncHandler(async (req, res) => {
         query.status = req.query.status;
     } else if (role === "USER") {
         // Don't show Draft articles to the Normal user
-        query.status = { $ne: "DRAFT" };
+        query.status = { $ne: "draft" };
     }
 
     // Language Filter

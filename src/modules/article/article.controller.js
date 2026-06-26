@@ -102,7 +102,7 @@ export const createArticle = AsyncHandler(async (req, res) => {
 // Get all articles or filter by category
 export const getArticles = AsyncHandler(async (req, res) => {
     const authId = req.userId;
-
+    const role = req.user?.role;
     const query = {};
 
     // Category Filter
@@ -114,8 +114,12 @@ export const getArticles = AsyncHandler(async (req, res) => {
         query.catId = new mongoose.Types.ObjectId(req.query.catId);
     }
 
+    // Status Filter
     if (req.query.status) {
-        query.status = req.query.status
+        query.status = req.query.status;
+    } else if (role === "USER") {
+        // Don't show Draft articles to the Normal user
+        query.status = { $ne: "DRAFT" };
     }
 
     // Language Filter
@@ -131,13 +135,8 @@ export const getArticles = AsyncHandler(async (req, res) => {
         };
     }
 
-    // const users = await User.find();
-    // console.log(users);
+    console.log("Query:", query);
 
-    // const categories = await Category.find();
-    // console.log(categories);
-
-    console.log('queru', query)
     const articles = await Article.aggregate([
         {
             $match: query

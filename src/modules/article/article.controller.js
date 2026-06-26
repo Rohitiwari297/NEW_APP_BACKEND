@@ -654,7 +654,7 @@ export const deleteArticle = AsyncHandler(async (req, res) => {
 
 
 
-    if (![roleContaints.admin, roleContaints.reporter].includes(userRole)) {
+    if (![roleContaints.admin, roleContaints.reporter, roleContaints.editor].includes(userRole)) {
         throw new ApiError(403, "You are not Authorized to access this api");
     }
 

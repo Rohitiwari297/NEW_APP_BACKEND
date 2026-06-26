@@ -24,7 +24,7 @@ export const createArticle = AsyncHandler(async (req, res) => {
     const userRole = req.user.role
 
 
-    if ([userRole !== roleContaints.admin, userRole !== roleContaints.reporter].includes(userRole)) {
+    if ([userRole !== roleContaints.admin, userRole !== roleContaints.reporter, userRole !== roleContaints.editor].includes(userRole)) {
         throw new ApiError(403, "You are not Authorized to access this api");
     }
 
@@ -283,7 +283,7 @@ export const getMyArticles = AsyncHandler(async (req, res) => {
     const authId = req.userId;
     const userRole = req.user.role;
 
-    if (userRole !== roleContaints.reporter) {
+    if (userRole !== roleContaints.reporter || userRole !== roleContaints.editor) {
         throw new ApiError(403, "Only reporters can access this API");
     }
 

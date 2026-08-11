@@ -13,51 +13,75 @@ import advertisementRouter from './modules/advertisement/advertisement.router.js
 import path from 'path'
 import { fileURLToPath } from "url";
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
-connectDB()
+const publicDir = path.join(__dirname, '..', 'public')
 
-app.use(express.json())
-app.use(cookieParser())
-app.use(express.urlencoded({ extended: true }))
-app.use(morgan('dev'))
+const app = express();
+
+connectDB();
+
+app.use(express.json());
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
+app.use(morgan('dev'));
 
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", 'https://unveiled-watch-fantasy.ngrok-free.dev'],
+    origin: [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "https://unveiled-watch-fantasy.ngrok-free.dev"
+    ],
     credentials: true
-}))
+}));
 
-app.use("/uploads", express.static("uploads"));
+// Serve frontend static files
+app.use(express.static(publicDir));
+
+// Serve uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// routes (example)
-app.get('/', (req, res) => {
-    res.send('Server running... ')
-})
+
+// =========================
+// API ROUTES
+// =========================
 
 app.get('/test', (req, res) => {
     res.json({
         success: true,
         message: 'Api is working'
-    })
-})
+    });
+});
 
-
-app.use('/api/v1/auth', authRoute)
+app.use('/api/v1/auth', authRoute);
 app.use('/api/v1/users', userRoute);
 app.use('/api/v1/category', categoryRoute);
 app.use('/api/v1/articles', articleRoute);
 app.use('/api/v1/editor', editorRoute);
 app.use('/api/v1/social-details', socialRouter);
-app.use('/api/v1/advertisement', advertisementRouter)
+app.use('/api/v1/advertisement', advertisementRouter);
 
+
+// Error test
 app.get('/err-test', (req, res, next) => {
     next(new Error("Testing"));
 });
 
+
+// =========================
+// FRONTEND FALLBACK
+// =========================
+
+// Express 5
+app.get('*name', (req, res) => {
+    res.sendFile(path.join(publicDir,  'index.html'));
+});
+
+
+// =========================
+// ERROR HANDLER
+// =========================
 
 app.use((err, req, res, next) => {
     console.error(err);
@@ -69,4 +93,3 @@ app.use((err, req, res, next) => {
 });
 
 export default app;
-

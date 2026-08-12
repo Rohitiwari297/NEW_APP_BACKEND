@@ -15,6 +15,9 @@ article.route('/')
     .post(isLoggedIn, articleUploads, createArticle)
     .get(isLoggedIn, getArticles);
 
+article.route('/articles')
+    .get(getArticle);
+
 article.get("/search", isLoggedIn, searchArticles);
 
 article.get("/my-articles", isLoggedIn, getMyArticles);
